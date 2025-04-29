@@ -47,6 +47,7 @@ def generate_response(pipe, user_question):
         # Gemmaの出力形式に合わせて調整が必要な場合がある
         # 最後のassistantのメッセージを取得
         assistant_response = ""
+        print("これが出力：",outputs[0].get("generated_text"))
         if outputs and isinstance(outputs, list) and outputs[0].get("generated_text"):
            if isinstance(outputs[0]["generated_text"], list) and len(outputs[0]["generated_text"]) > 0:
                # messages形式の場合
@@ -77,7 +78,11 @@ def generate_response(pipe, user_question):
         end_time = time.time()
         response_time = end_time - start_time
         print(f"Generated response in {response_time:.2f}s") # デバッグ用
-        return assistant_response, response_time
+        print(f"assiste response:{assistant_response}")
+        summary_prompt ="以下の内容からキーワードを抽出して"
+        summary_reponse = pipe(summary_prompt+assistant_response,max_new_tokens=50)
+       
+        return assistant_response, response_time,summary_reponse
 
     except Exception as e:
         st.error(f"回答生成中にエラーが発生しました: {e}")

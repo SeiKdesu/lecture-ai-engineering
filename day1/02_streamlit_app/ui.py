@@ -6,10 +6,49 @@ from database import save_to_db, get_chat_history, get_db_count, clear_db
 from llm import generate_response
 from data import create_sample_evaluation_data
 from metrics import get_metrics_descriptions
+def apply_custom_styles():
+    st.markdown("""
+        <style>
+        /* 全体の背景色 */
+        .stApp {
+            background-color: yellow;
+        }
+
+        /* サブヘッダーの装飾 */
+        h3 {
+            color: #2c3e50;
+            border-left: 6px solid #3498db;
+            padding-left: 10px;
+        }
+
+        /* テキストエリアのカスタマイズ */
+        textarea {
+            background-color: #ffffff;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
+        }
+
+        /* ボタンのカスタマイズ */
+        div.stButton > button {
+            background-color: #3498db;
+            color: white;
+            border-radius: 8px;
+            padding: 0.5em 1em;
+        }
+
+        /* メトリックの枠を柔らかくする */
+        .element-container .stMetric {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 # --- チャットページのUI ---
 def display_chat_page(pipe):
     """チャットページのUIを表示する"""
+    apply_custom_styles()
     st.subheader("質問を入力してください")
     user_question = st.text_area("質問", key="question_input", height=100, value=st.session_state.get("current_question", ""))
     submit_button = st.button("質問を送信")
@@ -23,6 +62,8 @@ def display_chat_page(pipe):
         st.session_state.response_time = 0.0
     if "feedback_given" not in st.session_state:
         st.session_state.feedback_given = False
+    if "summary_response" not in st.session_state:
+        st.session_state.summary_reponse =""
 
     # 質問が送信された場合
     if submit_button and user_question:
@@ -31,9 +72,10 @@ def display_chat_page(pipe):
         st.session_state.feedback_given = False # フィードバック状態もリセット
 
         with st.spinner("モデルが回答を生成中..."):
-            answer, response_time = generate_response(pipe, user_question)
+            answer, response_time,summary_response = generate_response(pipe, user_question)
             st.session_state.current_answer = answer
             st.session_state.response_time = response_time
+            st.summary_reponse = summary_response
             # ここでrerunすると回答とフィードバックが一度に表示される
             st.rerun()
 
@@ -42,7 +84,7 @@ def display_chat_page(pipe):
         st.subheader("回答:")
         st.markdown(st.session_state.current_answer) # Markdownで表示
         st.info(f"応答時間: {st.session_state.response_time:.2f}秒")
-
+        st.info(f"キーワード：{st.summary_reponse}")
         # フィードバックフォームを表示 (まだフィードバックされていない場合)
         if not st.session_state.feedback_given:
             display_feedback_form()
@@ -54,6 +96,7 @@ def display_chat_page(pipe):
                   st.session_state.current_answer = ""
                   st.session_state.response_time = 0.0
                   st.session_state.feedback_given = False
+                  st.summary_reponse =""
                   st.rerun() # 画面をクリア
 
 
